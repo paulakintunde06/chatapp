@@ -1,0 +1,91 @@
+<%- include('includes/head.ejs') %>
+<link rel="stylesheet" href="/css/forum.css">
+<%- include('includes/header.ejs') %>
+    <main>
+        <section>
+            <h4>Chat</h4>
+            <h6>Chat with <span style="color: green; font-weight: bolder;"><%= username %></span> </h6>
+            <div id="chats" style="overflow-y: scroll;">
+                <% if (messages.length > 0) { %> 
+                    <% for (let message of messages) { %>
+                        <% if (message.sender_id == sender_id) { %>
+                 <p id="prev_my_chat"><%= message.message %></p>
+               <% } else { %>
+               <p id="prev_other_chat"><%= message.message %></p>
+               <% } %>
+               <% } %>
+               <% } %>
+
+            </div>
+                <form class="form-control" action="/chat" method="post">
+                    <input type="text" name="message" id="message" value="">
+                    <input type="hidden" name="sender_id" value="<%= sender_id %>" >
+                    <input type="hidden" name="receiver_id" value="<%= receiver_id %>" >
+                    <input type="hidden" name="isForum" value="<%= false %>" >
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="submit" value="Post">
+                </form>
+        </section>
+        <a id="logout" href="/logout">Logout</a>
+    </main>
+    <script src="/socket.io/socket.io.js"></script> 
+        <script> 
+        // console.log("Hi")
+        const socket = io(); // Connect to the server
+        const chatSocket = io('/chat');
+        // console.log(socket)
+        // Send a message to the Server
+        let message;
+        let sender_id; 
+        let receiver_id;
+        let isForum;
+        const chatBox = document.getElementById('chats');
+         // Scroll to the latest message
+         chatBox.scrollTop = chatBox.scrollHeight;
+        // Send a message to the Server
+        document.querySelector('form').addEventListener('submit', (e) =>{
+            e.preventDefault()
+            message = document.getElementById('message').value;
+            sender_id = document.querySelector('[name="sender_id"').value;
+            receiver_id = document.querySelector('[name="receiver_id"').value;
+            isForum = document.querySelector('[name="isForum"').value;
+            console.log(message, sender_id, receiver_id)
+            chatSocket.emit('chatMessage', {message, sender_id, receiver_id, isForum});
+            document.getElementById('message').value = '';
+
+            
+
+
+
+
+
+
+        });
+
+        // Receive messages from the server
+        chatSocket.on('chatMessage', (data) =>{
+            const chatBox = document.getElementById('chats');
+            let newMessage = "";
+            if (Number(data.sender_id) == Number(sender_id)){
+                newMessage = document.createElement('p')
+                newMessage.setAttribute("id", "my_chat")
+                console.log(Number(sender_id))
+                // console.log("Yes")
+                newMessage.textContent = `${data.message}`;
+                chatBox.appendChild(newMessage);
+            } else{
+                newMessage = document.createElement('p')
+                newMessage.setAttribute("id", "other_chat")
+                // console.log("No")
+                // console.log(data)
+                chatBox.appendChild(newMessage);
+                newMessage.textContent = `${data.message}`;
+            }
+            // console.log(newMessage)
+
+            // Scroll to the latest message
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+    </script>
+</body>
+</html>

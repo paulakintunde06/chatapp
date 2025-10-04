@@ -1,0 +1,14 @@
+<%- include('includes/head.ejs') %>
+<link rel="stylesheet" href="css/dashboard.css">
+<%- include('includes/header.ejs') %>
+    <h1>Users</h1>
+    <a href="/forum">Visit Forum</a>
+    <ol>
+        <% if(users.length > 0) { %>
+            <% for (let user of users) { %>
+        <li><a href="/chat/<%= user.id %>" target="_blank"><%= user["username"] %></a></li>
+            <% } %>
+        <% } %>
+    </ol>
+    <a id="logout" href="/logout">Logout</a>
+<%- include('includes/footer.ejs') %>

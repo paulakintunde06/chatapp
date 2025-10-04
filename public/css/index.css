@@ -1,0 +1,80 @@
+main{
+    background-color: rgb(78, 179, 110);
+    height: 50%;
+    width: 50%;
+    position: absolute;
+    top: 25%;
+    bottom: auto;
+    left: 25%;
+    right: 25%;
+    border-radius: 10px;
+}
+main > section{
+    height: 100%;
+    /* margin: 15px; */
+    display: flex;
+    /* flex-direction: column; */
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+}
+
+input[type=submit]{
+    padding: 10px;
+    border-radius: 5px;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    /* transform: 2s ease; */
+    /* transition-property: ; */
+    transition-timing-function:ease-in;
+    transition-duration: 1s;
+    /* transform-style: flat; */
+    /* transition-property: ; */
+}
+
+input[type=text], input[type=password]{
+    outline: none;
+    border: none;
+    border-radius: 70px;
+    padding: 7px;
+}
+input[type=submit]:hover{
+    background-color: rgb(88, 207, 88);
+}
+
+.flash{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    margin: 20px auto;
+    width: fit-content;
+    border-radius: 5px;
+    font-weight: bold;
+    animation: fadeOut 4s forwards;
+}
+
+.flash .success{
+    background-color: #229c26;
+    color: white;
+}
+.flash .error{
+    background-color: rgb(233, 19, 11);
+    color: white;
+
+}
+
+@keyframes fadeOut{
+    0%{
+        opacity: 1;
+    }
+    80%{
+        opacity: 1;
+    }
+    100%{
+        opacity: 0;
+        display: none;
+    }
+}

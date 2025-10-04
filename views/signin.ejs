@@ -1,0 +1,23 @@
+<%- include('includes/head.ejs') %>
+<link rel="stylesheet" href="css/index.css">
+<%- include('includes/header.ejs') %>
+    <main>
+        <section>
+            <form class="form-control" action="/signin" method="post">
+                <label for="username">Username: </label> <br> 
+                <input type="text" name="username" id="username"> <br> <br>
+                <label for="password">Password </label> <br> 
+                <input type="password" name="password" id="password"> <br> <br>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="submit" value="Login">
+            </form>
+             <% if (success_msg){ %>
+             <div class="flash success"> <%= success_msg %></div>
+             <% } %>
+             <% if (error_msg) { %>
+             <div class="flash error"> <%= error_msg %></div>
+             <% } %>
+        </section>
+        <a id="signin" href="/">Sign Up</a>
+    </main>
+<%- include('includes/footer.ejs') %>
