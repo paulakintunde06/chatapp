@@ -12,10 +12,11 @@ const bcrypt = require("bcryptjs");
 const http = require('http');
 const {Server} = require('socket.io');
 const flash = require('connect-flash');
+const helmet = require('helmet');
+const compression = require('compression');
 
 // const Chat = require('../models/chat');
 // const Forum = require('../models/forum');
-
 
 
 const server = http.createServer(app)
@@ -27,6 +28,8 @@ const server = http.createServer(app)
 const User = require('./models/user');
 const Chat = require('./models/chat');
 const Forum = require('./models/forum');
+app.use(helmet())
+app.use(compression())
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
 // Initialize cookie parser
@@ -132,7 +135,12 @@ sequelize
 })
 
 const expressServer = app.listen(3000)
-const io = new Server(expressServer)
+const io = new Server(expressServer, {
+    cors: {
+        origin: '*',
+        method: ['GET', 'POST']
+    }
+});
 
 const chatNamespace = io.of('/chat')
 const forumNamespace = io.of('/forum')
