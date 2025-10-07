@@ -111,7 +111,7 @@ User.hasMany(Forum, {foreignKey: 'sender_id', as: 'sentForumMessages'});
 Chat.belongsTo(User, {foreignKey: 'sender_id', as: 'sender'})
 
 // A chat belongs to a receiver
-Chat.belongsTo(User,{ foreignKey:'received_id', as: 'receiver',constraints: true, onDelete: 'CASCADE' })
+Chat.belongsTo(User,{ foreignKey:'receiver_id', as: 'receiver',constraints: true, onDelete: 'CASCADE' })
 
 // A forum_message belongs to a sender
 Forum.belongsTo(User,{ foreignKey:'sender_id', as: 'forumSender',constraints: true, onDelete: 'CASCADE' })
@@ -127,7 +127,7 @@ sequelize
         // {force: true}
     )
     .then(result => {
-        console.log(result)
+        // console.log(result)
         console.log("All models are synchronized successfully");
         console.log("Tables created");
         // app.listen(3000); 

@@ -12,11 +12,13 @@ const Forum = sequelize.define('Forum',{
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model: 'Users',
+            model: 'users',
             key: 'id',
         }
-    },
-    
+    },   
+}, {
+    tableName: 'forums',
+    timestamps: true
 });
 
 module.exports = Forum;

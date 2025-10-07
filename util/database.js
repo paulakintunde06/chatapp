@@ -22,7 +22,8 @@ if (process.env.NODE_ENV === "production") {
                 require: true,
                 rejectUnauthorized: false
             }
-        }
+        },
+        logging: false 
     });
 } else {
     sequelize = new Sequelize('chatapp', 'root', "" || null, {

@@ -12,7 +12,7 @@ const Chat = sequelize.define('Chat',{
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-            model: 'Users',
+            model: 'users',
             key: 'id',
         }
     },
@@ -20,10 +20,13 @@ const Chat = sequelize.define('Chat',{
         type: Sequelize.INTEGER,
         allowNull: false,
         references:{
-            model: 'Users',
+            model: 'users',
             key: 'id',
         },
     },
+}, {
+    tableName: 'chats',
+    timestamps: true
 });
 
 module.exports = Chat;
