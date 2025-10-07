@@ -43,7 +43,7 @@ exports.getChat = (req, res, next) =>{
     const receiver_id = Number(req.params.id)
     const sender_id = req.session.user_id;
     const csrfToken = req.session.csrfToken
-    const username = "Tobi"
+    let username;
     console.log(sender_id, receiver_id);
         Chat.findAll(
             {
@@ -57,15 +57,16 @@ exports.getChat = (req, res, next) =>{
         }
         ).then((result) =>{
             result = result.map(chat => chat.get({ plain: true }));
-            console.log(1)
-            console.log("Hi")
-            console.log(result)
+            // console.log(1)
+            // console.log("Hi")
+            // console.log(result)
             res.render('chat', {sender_id: sender_id, receiver_id: receiver_id, messages:result, csrfToken:req.session.csrfToken, username:username}
             );
 
         }).catch((err) =>{
-            console.log("Get DB error")
-            // console.log(err)
+            console.log("Error name:", err.name)
+            console.log("Error message:", err.message)
+            console.log("Full error:", err)
         })
    
 
@@ -88,7 +89,11 @@ exports.postChat = (req, res, next) =>{
                 result = result.get({plain:true})
                 // console.log(result)
                 res.redirect(`/chat/${receiver_id}`)
-            }).catch(err =>{console.log(err)});
+            }).catch(err => {
+            console.log("Error name:", err.name)
+            console.log("Error message:", err.message)
+            console.log("Full error:", err)
+            });
 
 }
 
@@ -106,9 +111,11 @@ exports.getForum = (req, res, next) =>{
         // const isForum = true
         res.render('forum', {sender_id: sender_id, forum: newforum, csrfToken: req.session.csrfToken, isForum: true})
     } 
-    ).catch(
-            err => console.log(err)
-            );
+    ).catch(err => {
+        console.log("Error name:", err.name)
+        console.log("Error message:", err.message)
+        console.log("Full error:", err)
+    });
 }
 exports.postForum = (req, res, next) =>{
     let message = req.body.message;
@@ -127,7 +134,9 @@ exports.postForum = (req, res, next) =>{
             // console.log(result);
             res.redirect('/forum')
         }).catch(err => {
-            console.log(err)
+            console.log("Error name:", err.name)
+            console.log("Error message:", err.message)
+            console.log("Full error:", err)
         })
         // console.log(forumChat)
    

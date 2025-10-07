@@ -25,7 +25,7 @@ if (process.env.NODE_ENV === "production") {
         }
     });
 } else {
-    sequelize = new Sequelize('chatapp', 'root', process.env.DB_PASS || null, {
+    sequelize = new Sequelize('chatapp', 'root', "" || null, {
        dialect: 'mysql',
        host: 'localhost',
        port: 3310,
