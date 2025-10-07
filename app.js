@@ -123,7 +123,7 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-        // { alter: true }
+        { alter: true }
     )
     .then(result =>{
         // console.log(result);
