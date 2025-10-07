@@ -17,7 +17,7 @@
                <% } %>
 
             </div>
-                <form class="form-control" action="/chat" method="post">
+                <form class="form-control">
                     <input type="text" name="message" id="message" value="">
                     <input type="hidden" name="sender_id" value="<%= sender_id %>" >
                     <input type="hidden" name="receiver_id" value="<%= receiver_id %>" >
@@ -30,10 +30,8 @@
     </main>
     <script src="/socket.io/socket.io.js"></script> 
         <script> 
-        // console.log("Hi")
-        const socket = io(); // Connect to the server
+
         const chatSocket = io('/chat');
-        // console.log(socket)
         // Send a message to the Server
         let message;
         let sender_id; 
@@ -52,14 +50,6 @@
             console.log(message, sender_id, receiver_id)
             chatSocket.emit('chatMessage', {message, sender_id, receiver_id, isForum});
             document.getElementById('message').value = '';
-
-            
-
-
-
-
-
-
         });
 
         // Receive messages from the server
@@ -76,8 +66,6 @@
             } else{
                 newMessage = document.createElement('p')
                 newMessage.setAttribute("id", "other_chat")
-                // console.log("No")
-                // console.log(data)
                 chatBox.appendChild(newMessage);
                 newMessage.textContent = `${data.message}`;
             }

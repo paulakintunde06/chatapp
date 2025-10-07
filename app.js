@@ -140,7 +140,7 @@ const expressServer = app.listen(3000)
 const io = new Server(expressServer, {
     cors: {
         origin: '*',
-        method: ['GET', 'POST']
+        methods: ['GET', 'POST']
     }
 });
 
@@ -163,13 +163,16 @@ chatNamespace.on('connection', (socket) =>{
                                 console.log(result)
                                 console.log("Message saved!")
                             // res.redirect(`/chat/${receiver_id}`)
-                        }).catch(err =>{console.log(err)});
+                            chatNamespace.emit('chatMessage', data);
+                            }).catch(err => {
+                                console.log(err); 
+                                
+                            });
                     
-        chatNamespace.emit('chatMessage', data);
-           // Handle user disconnect
-    socket.on('disconnect', () =>{
-        console.log('User disconnected:', )
-    })
+                        })
+                        // Handle user disconnect
+        socket.on('disconnect', () =>{
+            console.log('User disconnected:', )
         
     })
 })
@@ -187,16 +190,16 @@ forumNamespace.on('connection', (socket) =>{
                         .then(result =>{
                             console.log(result);
                             console.log("Message saved!")
+                            forumNamespace.emit("forumMessage", data);
                             // res.redirect('/forum')
                         }).catch(err => {
                             console.log(err)
                         })
-        forumNamespace.emit("forumMessage", data);
 
-        // Handle user disconnect
-    socket.on('disconnect', () =>{
-        console.log('User disconnected:', )
-    })
-}})
+                    }})
+                    // Handle user disconnect
+                socket.on('disconnect', () =>{
+                    console.log('User disconnected:', )
+                })
 })
 

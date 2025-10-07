@@ -19,7 +19,6 @@
                     <input type="text" name="message" id="message" value="">
                     <input type="hidden" name="sender_id" value="<%= sender_id %>">
                     <input type="hidden" name="isForum" value="<%= isForum %>">
-                    <!-- <input type="hidden" name="receiver_id" value="2"> -->
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input id="submit" type="submit" value="Post">
                 </form>
@@ -27,11 +26,9 @@
         <a id="logout" href="/logout">Logout</a>
     </main>
     <script src="/socket.io/socket.io.js"></script> 
+    
         <script> 
-        // console.log("Hi")
-        const socket = io(); // Connect to the server
         const forumSocket = io('/forum')
-        // console.log(socket)
         // Send a message to the Server
         let message = null;
         let sender_id; 
@@ -44,32 +41,21 @@
          message = document.getElementById('message').value;
          sender_id = document.querySelector('[name="sender_id"').value;
          isForum = document.querySelector('[name="isForum"').value;
-            // const receiver_id = document.querySelector('[name="receiver_id"').value;
-            // console.log(message, sender_id, isForum)
             forumSocket.emit('forumMessage', {message, sender_id, isForum});
             document.getElementById('message').value = '';
         });
 
         // Receive messages from the server
         forumSocket.on('forumMessage', (data) =>{
-            // console.log(data)
-            // console.log(message)
-            // console.log(data.message)
-            // console.log(Number(data.sender_id))
-            // console.log(Number(sender_id))
             let newMessage = "";
             if (Number(data.sender_id) == Number(sender_id)){
                 newMessage = document.createElement('p')
                 newMessage.setAttribute("id", "my_chat")
-                // console.log(Number(sender_id))
-                // console.log("Yes")
                 newMessage.textContent = `${data.message}`;
                 chatBox.appendChild(newMessage);
             } else{
                 newMessage = document.createElement('p')
                 newMessage.setAttribute("id", "other_chat")
-                // console.log("No")
-                // console.log(data)
                 chatBox.appendChild(newMessage);
                 newMessage.textContent = `${data.message}`;
             }
