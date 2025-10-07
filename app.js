@@ -123,10 +123,11 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-    // { alter: true }
-        {force: true}
+    { alter: true }
+        // {force: true}
     )
-    .then(result =>{
+    .then(result => {
+        console.log(result)
         console.log("All models are synchronized successfully");
         console.log("Tables created");
         // app.listen(3000); 
