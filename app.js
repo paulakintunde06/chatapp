@@ -32,31 +32,37 @@ const server = http.createServer(app)
 //     }
 // }))
 
-app.use(helmet({
-    contentSecurityPolicy: false
-}))
-
-// const isProduction = process.env.NODE_ENV === 'production';
-
 // app.use(helmet({
-//     contentSecurityPolicy: {
-//         directives: {
-//             defaultSrc: ["'self'"],
-//             scriptSrc: [
-//                 "'self'",
-//                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
-//                 "'unsafe-inline'",
-//                 "https://cdn.socket.io"
-//             ],
-//             connectSrc: [
-//                 "'self'",
-//                 isProduction ? "https://chatapp-mw90.onrender.com/" : "http://localhost:3000",
-//                 isProduction ? "ws://chatapp-mw90.onrender.com/ ": "ws://localhost:3000"],
-//             styleSrc: ["'self'", "'unsafe-inline'"]
-
-//         }
-//     }
+//     contentSecurityPolicy: false
 // }))
+
+const isProduction = process.env.NODE_ENV === 'production';
+const productionUrl = "https://chatapp-mw90.onrender.com"
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
+                "'unsafe-inline'",
+                // "http://localhost:3000", // Development
+                // "https://chatapp-mw90.onrender.com" // Production
+            ],
+            connectSrc: [
+                "'self'",
+                "ws:",
+                "wss:",
+                ...(isProduction ? [productionUrl, `wss://${new URL(productionUrl).hostname}`] : ["http://localhost:3000", "ws://localhost:3000"]
+                )
+            ],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"]
+        }
+    },
+    crossOriginEmbedderPolicy: false
+}));
 app.use(compression())
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
