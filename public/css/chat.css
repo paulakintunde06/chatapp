@@ -70,7 +70,7 @@ main input[type="text"]{
     border-color: greenyellow;
 }
 
-main input[type="submit"]{
+main button[type="submit"]{
     width: 15%;
     height: 5vh;
     padding: 5px;

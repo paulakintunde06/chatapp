@@ -8,61 +8,82 @@
                 <% if (forum.length > 0) { %> 
                     <% for (let message of forum) { %>
                         <% if (message.sender_id == sender_id){ %>
-                            <p id="prev_my_chat"><%= message.message %></p>
+                            <p id="prev_my_chat"><strong>You: </strong><%= message.message %></p>
                         <% } else { %>
-                            <p id="prev_other_chat"><%= message.message %></p>
+                            <p id="prev_other_chat">
+                                <strong style="color:black"><%=message.username%>: </strong><%= message.message%></p>
                             <% } %>
                         <% } %>
                  <% } %>
             </div>
-                <form class="form-control">
-                    <input type="text" name="message" id="message" value="">
+                <form class="form-control" id="chat-form">
+                    <input type="text" name="message" id="message" placeholder="Type your message here...">
                     <input type="hidden" name="sender_id" value="<%= sender_id %>">
-                    <input type="hidden" name="isForum" value="<%= isForum %>">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <input id="submit" type="submit" value="Post">
+                    <input type="hidden" name="isForum" value="<%= true %>">
+                    <input type="hidden" name="username" id="username" value="<%= username %>">
+                    <!-- <input type="hidden" name="receiver_id" value="2"> -->
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button type="submit">Post</button>
                 </form>
             </section>
         <a id="logout" href="/logout">Logout</a>
     </main>
     <script src="/socket.io/socket.io.js"></script> 
-    
         <script> 
-        const forumSocket = io('/forum')
-        // Send a message to the Server
-        let message = null;
-        let sender_id; 
-        let isForum;
-        const chatBox = document.getElementById('chats');
-         // Scroll to the latest message
-         chatBox.scrollTop = chatBox.scrollHeight;
-        document.querySelector('form').addEventListener('submit', (e) =>{
-            e.preventDefault()
-         message = document.getElementById('message').value;
-         sender_id = document.querySelector('[name="sender_id"').value;
-         isForum = document.querySelector('[name="isForum"').value;
-            forumSocket.emit('forumMessage', {message, sender_id, isForum});
-            document.getElementById('message').value = '';
-        });
 
+        //FORUM
+        const forumSocket = io('/forum');
+        console.log("forum")
+
+        const form = document.getElementById('chat-form')
+        const csrfToken = document.querySelector('[name="csrf_token"]').value;
+        const chatBox = document.getElementById('chats');
+        
+        // console.log(username)
+        // Scroll to the latest message
+        
+        // Send a message to the Server
+        form.addEventListener('submit', (e) =>{
+            e.preventDefault();
+            const sender_id = document.querySelector('[name="sender_id"]').value;
+            const isForum = document.querySelector('[name="isForum"]').value;
+            const message = document.getElementById('message').value.trim();
+            if(message){
+                const immediateMessage = document.createElement('p');
+                immediateMessage.setAttribute("id", "my_chat");
+                immediateMessage.innerHTML = `<strong>You: </strong> ${message}`;
+                chatBox.appendChild(immediateMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                forumSocket.emit('forumMessage', { message, sender_id: parseInt(sender_id), isForum, _csrf: csrfToken});
+                document.getElementById('message').value = '';
+
+            }
+
+        });
+        
         // Receive messages from the server
         forumSocket.on('forumMessage', (data) =>{
-            let newMessage = "";
-            if (Number(data.sender_id) == Number(sender_id)){
-                newMessage = document.createElement('p')
-                newMessage.setAttribute("id", "my_chat")
-                newMessage.textContent = `${data.message}`;
-                chatBox.appendChild(newMessage);
-            } else{
-                newMessage = document.createElement('p')
+            const my_id = document.querySelector('[name="sender_id"]').value
+            const isMyMessage = Number(data.sender_id) === Number(my_id);
+            
+            if(!isMyMessage){
+                let newMessage = document.createElement('p');
                 newMessage.setAttribute("id", "other_chat")
+                newMessage.innerHTML = `<strong>${data.username}: </strong> ${data.message}`;
                 chatBox.appendChild(newMessage);
-                newMessage.textContent = `${data.message}`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+                chatBox.appendChild(newMessage);
             }
-            // console.log(newMessage)
+
 
             // Scroll to the latest message
-            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        // Connection status for debugging
+        forumSocket.on('connect', () =>{
+        console.log("Connected to the forum namespace");
+        });
+        forumSocket.on('disconnect', () =>{
+        console.log("Disconnected from forum namespace")
         })
     </script>
 <%- include('includes/footer.ejs') %>

@@ -7,6 +7,22 @@ const Forum = require('../models/forum');
 // let users = [];
 // let forum = [];
 
+// FETCH USERNAME
+async function getUsernameById(userId) {
+    try {
+        const username = await User.findByPk(userId);
+
+        if (username) {
+            return username.username;
+        } else {
+            return null;
+        }
+    } catch(error) {
+        console.error('Error fetching user:', error);
+        throw error;
+    }
+}
+
 // DASHBOARD
 exports.getDashboard = (req, res, next) =>{
     // console.log("I'm in the dashboard now!")
@@ -58,7 +74,7 @@ exports.getChat = (req, res, next) =>{
         ).then((result) =>{
             result = result.map(chat => chat.get({ plain: true }));
             // console.log(1)
-            // console.log("Hi")
+            console.log("GetChat")
             // console.log(result)
             res.render('chat', {sender_id: sender_id, receiver_id: receiver_id, messages:result, csrfToken:req.session.csrfToken, username:username}
             );
@@ -71,45 +87,53 @@ exports.getChat = (req, res, next) =>{
    
 
 }
-exports.postChat = (req, res, next) =>{
-    const message = req.body.message;
-    const sender_id = req.session.user_id
-    const receiver_id = req.body.receiver_id
-    req.session.csrfToken = req.csrfToken()
-    // console.log(receiver_id)
-    // console.log(message)
-    // console.log(sender_id)
-         Chat.create({
-            message: message,
-            sender_id: Number(sender_id),
-            receiver_id: Number(receiver_id)
-        })
-        .then(
-            (result) =>{
-                result = result.get({plain:true})
-                // console.log(result)
-                res.redirect(`/chat/${receiver_id}`)
-            }).catch(err => {
-            console.log("Error name:", err.name)
-            console.log("Error message:", err.message)
-            console.log("Full error:", err)
-            });
+// exports.postChat = (req, res, next) => {
+//     console.log("PostChat")
+//     const message = req.body.message;
+//     const sender_id = req.session.user_id
+//     const receiver_id = req.body.receiver_id
+//     req.session.csrfToken = req.csrfToken()
+//     console.log(receiver_id)
+//     console.log(message)
+//     console.log(sender_id)
+//          Chat.create({
+//             message: message,
+//             sender_id: Number(sender_id),
+//             receiver_id: Number(receiver_id)
+//         })
+//         .then(
+//             (result) =>{
+//                 result = result.get({plain:true})
+//                 console.log(result)
+//                 res.redirect(`/chat/${receiver_id}`)
+//             }).catch(err => {
+//             console.log("Error name:", err.name)
+//             console.log("Error message:", err.message)
+//             console.log("Full error:", err)
+//             });
 
-}
+// }
 
 // FORUM
-exports.getForum = (req, res, next) =>{
+exports.getForum =  (req, res, next) =>{
     req.session.csrfToken = req.csrfToken();
     const sender_id = req.session.user_id;
-    console.log(sender_id)
     Forum.findAll()
     .then(forumChat =>{
+        const username = getUsernameById(sender_id).then(username => {
+            console.log(sender_id, username)
+            if (username) {
+                return username
+            } else {
+                return 'User not found!'
+            }
+        });
         // forumChat.map(forum => {console.log(forum)})
         // console.log(sender_id)
         let newforum = forumChat.map(forum => forum.toJSON())
         // console.log(newforum)
         // const isForum = true
-        res.render('forum', {sender_id: sender_id, forum: newforum, csrfToken: req.session.csrfToken, isForum: true})
+        res.render('forum', {sender_id: sender_id, forum: newforum, csrfToken: req.session.csrfToken, isForum: true, username: username})
     } 
     ).catch(err => {
         console.log("Error name:", err.name)
@@ -117,30 +141,26 @@ exports.getForum = (req, res, next) =>{
         console.log("Full error:", err)
     });
 }
-exports.postForum = (req, res, next) =>{
-    let message = req.body.message;
-    let sender_id = req.body.sender_id;
-    let receiver_id = req.body.receiver_id;
-    // console.log(sender_id)
-    // console.log(message)
-    // console.log(receiver_id)
-
-    
-        const forumChat = Forum.create({
-            message: message,
-            sender_id: sender_id
-        })
-        .then(result =>{
-            // console.log(result);
-            res.redirect('/forum')
-        }).catch(err => {
-            console.log("Error name:", err.name)
-            console.log("Error message:", err.message)
-            console.log("Full error:", err)
-        })
-        // console.log(forumChat)
+// exports.postForum = (req, res, next) =>{
+//     let message = req.body.message;
+//     let sender_id = req.body.sender_id;
+//     let receiver_id = req.body.receiver_id;
    
-}
+//         const forumChat = Forum.create({
+//             message: message,
+//             sender_id: sender_id
+//         })
+//         .then(result =>{
+//             console.log(result);
+//             res.redirect('/forum')
+//         }).catch(err => {
+//             console.log("Error name:", err.name)
+//             console.log("Error message:", err.message)
+//             console.log("Full error:", err)
+//         })
+//         // console.log(forumChat)
+   
+// }
 
 exports.getLogout = (req, res, next) =>{
     // console.log(res.locals.csrfToken)

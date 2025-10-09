@@ -17,62 +17,84 @@
                <% } %>
 
             </div>
-                <form class="form-control">
-                    <input type="text" name="message" id="message" value="">
+                <form class="form-control" id="chat-form">
+                    <input type="text" name="message" id="message" placeholder="Type your message..." required>
                     <input type="hidden" name="sender_id" value="<%= sender_id %>" >
                     <input type="hidden" name="receiver_id" value="<%= receiver_id %>" >
-                    <input type="hidden" name="isForum" value="<%= false %>" >
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <input type="submit" value="Post">
+                    <input type="hidden" name="isForum" value="<%= false %>" > 
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button type="submit">Send Message</button>
                 </form>
         </section>
         <a id="logout" href="/logout">Logout</a>
     </main>
-    <script src="/socket.io/socket.io.js"></script> 
+    <script src="/socket.io/socket.io.js?v=<%= new Date().getTime() %>"></script> 
         <script> 
-
+        // console.log("socket for chat.ejs")
+        // const socket = io();
         const chatSocket = io('/chat');
-        // Send a message to the Server
-        let message;
-        let sender_id; 
-        let receiver_id;
-        let isForum;
+    if(typeof(io) === 'undefined'){
+        console.error("socket.IO not loaded - check network tab")
+        alert("Socket.IO failed to load")
+    } else{
+        console.log("Socket.IO loaded")
+    }
+
         const chatBox = document.getElementById('chats');
+        const form = document.getElementById('chat-form')
+        const messageInput = document.getElementById('message');
+        const sender_id = document.querySelector('[name="sender_id"').value;
+        const receiver_id = document.querySelector('[name="receiver_id"').value;
+        const isForum = document.querySelector('[name="isForum"]').value;
+        const csrfToken = document.querySelector('[name="csrf_token"]').value;
          // Scroll to the latest message
          chatBox.scrollTop = chatBox.scrollHeight;
+
         // Send a message to the Server
-        document.querySelector('form').addEventListener('submit', (e) =>{
-            e.preventDefault()
-            message = document.getElementById('message').value;
-            sender_id = document.querySelector('[name="sender_id"').value;
-            receiver_id = document.querySelector('[name="receiver_id"').value;
-            isForum = document.querySelector('[name="isForum"').value;
+        form.addEventListener('submit', (e) =>{
+            e.preventDefault();
+            alert("I'm prepared to submit form")
+            const message = messageInput.value.trim();
             console.log(message, sender_id, receiver_id)
-            chatSocket.emit('chatMessage', {message, sender_id, receiver_id, isForum});
-            document.getElementById('message').value = '';
+            if(message){
+                console.log("Sending message via Socket.IO:")
+                chatSocket.emit('chatMessage', {
+                    message,
+                     sender_id: parseInt(sender_id),
+                      receiver_id: parseInt(receiver_id),
+                       isForum,
+                     _csrf: csrfToken
+                    });
+            }
+            messageInput.value = '';
         });
 
         // Receive messages from the server
         chatSocket.on('chatMessage', (data) =>{
-            const chatBox = document.getElementById('chats');
-            let newMessage = "";
-            if (Number(data.sender_id) == Number(sender_id)){
-                newMessage = document.createElement('p')
+            console.log("New chat message received:", data);
+
+            const newMessage = document.createElement('p');
+            const isMyMessage = parseInt(data.sender_id) === parseInt(sender_id);
+
+            if(isMyMessage){
                 newMessage.setAttribute("id", "my_chat")
-                console.log(Number(sender_id))
-                // console.log("Yes")
                 newMessage.textContent = `${data.message}`;
-                chatBox.appendChild(newMessage);
             } else{
-                newMessage = document.createElement('p')
                 newMessage.setAttribute("id", "other_chat")
-                chatBox.appendChild(newMessage);
                 newMessage.textContent = `${data.message}`;
             }
-            // console.log(newMessage)
+            console.log(newMessage)
+            chatBox.appendChild(newMessage);
 
             // Scroll to the latest message
             chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        // Connection status for debugging
+        chatSocket.on('connect', () =>{
+            console.log("Connected to the chat namespace");
+        });
+        chatSocket.on('disconnect', () =>{
+            console.log("Disconnected from chat namespace")
         })
     </script>
 </body>

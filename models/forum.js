@@ -15,7 +15,11 @@ const Forum = sequelize.define('Forum',{
             model: 'users',
             key: 'id',
         }
-    },   
+    },  
+    username: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    }
 }, {
     tableName: 'forums',
     timestamps: true
