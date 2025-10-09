@@ -31,25 +31,32 @@ const server = http.createServer(app)
 //         }
 //     }
 // }))
-const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: [
-                "'self'",
-                ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
-            ],
-            connectSrc: [
-                "'self'",
-                isProduction ? "https://chatapp-mw90.onrender.com/" : "http://localhost:3000",
-                isProduction ? "ws://chatapp-mw90.onrender.com/ ": "ws://localhost:3000"],
-            styleSrc: ["'self'", "'unsafe-inline'"]
-
-        }
-    }
+    contentSecurityPolicy: false
 }))
+
+// const isProduction = process.env.NODE_ENV === 'production';
+
+// app.use(helmet({
+//     contentSecurityPolicy: {
+//         directives: {
+//             defaultSrc: ["'self'"],
+//             scriptSrc: [
+//                 "'self'",
+//                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
+//                 "'unsafe-inline'",
+//                 "https://cdn.socket.io"
+//             ],
+//             connectSrc: [
+//                 "'self'",
+//                 isProduction ? "https://chatapp-mw90.onrender.com/" : "http://localhost:3000",
+//                 isProduction ? "ws://chatapp-mw90.onrender.com/ ": "ws://localhost:3000"],
+//             styleSrc: ["'self'", "'unsafe-inline'"]
+
+//         }
+//     }
+// }))
 app.use(compression())
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
