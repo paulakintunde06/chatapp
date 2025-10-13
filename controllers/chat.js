@@ -55,12 +55,12 @@ exports.getDashboard = (req, res, next) =>{
 }
 
 // CHAT
-exports.getChat = (req, res, next) =>{
+exports.getChat = async (req, res, next) =>{
     const receiver_id = Number(req.params.id)
     const sender_id = req.session.user_id;
     const csrfToken = req.session.csrfToken
-    let username;
-    console.log(sender_id, receiver_id);
+    let recipient_username = await getUsernameById(receiver_id)
+    
         Chat.findAll(
             {
             where:{
@@ -75,8 +75,8 @@ exports.getChat = (req, res, next) =>{
             result = result.map(chat => chat.get({ plain: true }));
             // console.log(1)
             console.log("GetChat")
-            // console.log(result)
-            res.render('chat', {sender_id: sender_id, receiver_id: receiver_id, messages:result, csrfToken:req.session.csrfToken, username:username}
+            console.log(result)
+            res.render('chat', {sender_id: sender_id, receiver_id: receiver_id, messages:result, csrfToken:req.session.csrfToken, recipient_username:recipient_username,username: recipient_username}
             );
 
         }).catch((err) =>{

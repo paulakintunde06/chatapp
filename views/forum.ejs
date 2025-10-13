@@ -74,10 +74,101 @@
                 chatBox.scrollTop = chatBox.scrollHeight;
                 chatBox.appendChild(newMessage);
             }
-
-
+            
+            
             // Scroll to the latest message
+            chatBox.scrollTop = chatBox.scrollHeight;
         })
+         // NOTIFICATION FUNCTIONS
+         function showNotification(message, type= 'info'){
+         // Check if browser supports notification
+         if(!("Notification" in window)){
+         console.log("This browser does not support notifications")
+         return;
+         }
+
+         // Request Permission if not granted
+         if(Notification.permission === "default"){
+         Notification.requestPermission().then(permission => {
+         if(permission === "granted"){
+         createNotification(message, type);
+         }
+         });
+         } else if(Notification.permission === "granted"){
+         createNotification(message, type)
+         }
+
+         // Also show in-app notification
+         showInAppNotification(message,type);
+         }
+
+         function createNotification(message, type){
+         const notification = new Notification('Chat App', {
+         body: message,
+         icon: '/images/icon.png', // Add yu app icon
+         tag: 'chat-notification'
+         });
+
+         notification.onclick = function(){
+         window.focus();
+         notification.close();
+         };
+         setTimeout(notification.close.bind(notification), 5000)
+         }
+
+         function showInAppNotification(message,type){
+         // create in-app notification element
+         const notification = document.createElement('div');
+         notification.className = `in-app-notification ${type}`;
+         notification.innerHTML = `
+         <span> ${message} </span>
+         <button onclick="this.parentElement.remove()">&times;</button>`;
+         }
+         // Add Styles if not already added
+        if(!document.querySelector('#notfication-style')){
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+                .in-app-notification{
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #007bff;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 5px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                    max-width: 300px;
+                    animation: slideIn 0.3s ease-out;
+                }
+                .in-app-notification.info{background: #007bff;}
+                .in-app-notification.success{background: 328a745;}
+                .in-app-notification.warning{background: #ffc107; color: #000;}
+                .in-app-notification.error{background: #dc3545;}
+                .in-app-notification.warning{
+                background: none;
+                border: none;
+                color: inherit;
+                font-size: 18px;
+                cursor: pointer;
+                margin-left: 10px;
+                }
+                @keyframes slideIn{
+                from{ transform: translateX(100%); opacity: 0;}
+                    to{ transform: translateX(0); opacity: 1;}
+                }
+        `;
+            document.head.appendChild(stules);
+        }
+            document.body.appendChild(notification);
+        
+        setTimeout(()=>{
+            if(notification.parenetElement){
+                notification.remove()
+            }
+         }, 5000);
+
         // Connection status for debugging
         forumSocket.on('connect', () =>{
         console.log("Connected to the forum namespace");

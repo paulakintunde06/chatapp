@@ -15,26 +15,7 @@ const flash = require('connect-flash');
 const helmet = require('helmet');
 const compression = require('compression');
 
-
 const server = http.createServer(app)
-// const io = new Server(server);
-// console.log(io)
-
-
-// app.use(helmet({
-//     contentSecurityPolicy: {
-//         directives: {
-//             defaultSrc: ["'self'"],
-//             scriptSrc: ["'self'", "'unsafe-inline'", "http://localhost:3000"],
-//             connectSrc: ["'self'", "ws://localhost:3000", "http://localhost:3000"],
-//             styleSrc: ["'self'", "'unsafe-inline'"]
-//         }
-//     }
-// }))
-
-// app.use(helmet({
-//     contentSecurityPolicy: false
-// }))
 
 const isProduction = process.env.NODE_ENV === 'production';
 const productionUrl = "https://chatapp-mw90.onrender.com"
@@ -58,11 +39,14 @@ app.use(helmet({
                 )
             ],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"]
+            imgSrc: ["'self'", "data:", "https:"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"]
         }
     },
     crossOriginEmbedderPolicy: false
 }));
+
 app.use(compression())
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -87,15 +71,22 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+const sessionStore = new SequelizeStore({
+    db: sequelize,
+})
 
+// Session Store
+// const sessionStore = new SequelizeStore({
+//     db: sequelize,
+// });
 const sessionMiddleware =
 session({
-    // store: SequelizeStore,
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "MySecret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // will set to true in production
+        secure: process.env.NODE_ENV === "production" ? true:false, // will set to true in production
         httpOnly: true,
         maxAge: 1000 * 60 * 60
     }
@@ -112,46 +103,28 @@ const authenticationController = require("./controllers/autentication")
 const chatController = require("./controllers/chat");
 const { contentSecurityPolicy } = require("helmet");
 
-// Session Store
-const sessionStore = new SequelizeStore({
-    db: sequelize,
-});
 
 
 app.use(
    sessionMiddleware
     );
     
-app.use(flash())
+    app.use(flash())
     
     // Sync the session store
-sessionStore.sync();
-    app.use((req, res, next) =>{
-        res.locals.success_msg = req.flash('success_msg');
-        res.locals.error_msg = req.flash('error_msg');
-        next();
-    })
-    
-    app.use(authenticationRoutes);
-    app.use(chatRoutes);
-    app.use(errorController.get404);
-   
-//     app.get('/test-db', async (req, res) => {
-//     console.log("Test-db")
-//     try {
-//         const chatTest = await Chat.create({
-//             message: "Test chat message",
-//             sender_id: 1,
-//             receiver_id: 2
-//         })
-//     } catch(error) {
-//         res.json({
-//             success: false,
-//             error: error.message
-//         })
-//     }
-// })
+sessionStore.sync({ force: true }).then(() => {
+    console.log("sessions table created")
+}).catch(err => console.log("Error sequelize"));
 
+app.use((req, res, next) =>{
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    next();
+})
+
+app.use(authenticationRoutes);
+app.use(chatRoutes);
+app.use(errorController.get404);
 
 
 // A user can send many messages
@@ -183,17 +156,14 @@ sequelize
         // {force: true}
     )
     .then(result => {
-        // console.log(result)
         console.log("All models are synchronized successfully");
-        console.log("Tables created");
-        // app.listen(3000); 
+        // console.log("Tables created");
 }).catch(err =>{
-    console.log('Tables not created');
+    // console.log('Tables not created');
     console.log(err);
 })
 
 
-// const expressServer = app.listen(3000)
 const io = new Server(server, {
     cors: {
         origin: function (origin, callback) {
@@ -202,65 +172,116 @@ const io = new Server(server, {
         methods: ['GET', 'POST']
     }
 });
+// const socket = io()
 // console.log("SERVER")
-io.on('connection', (socket) => {
-    console.log('ROOT')
-    socket.on('disconnect', () => {
-        console.log("ROOT disconnect")
-    })
-})
+// io.on('connection', (socket) => {
+//     console.log('ROOT')
+//     socket.on('disconnect', () => {
+//         console.log("ROOT disconnect")
+//     })
+// })
 const chatNamespace = io.of('/chat')
 const forumNamespace = io.of('/forum')
 
 
 // Chat namespaces
-chatNamespace.on('connection', (socket) =>{
+const userSockets = new Map();
+chatNamespace.on('connection', (socket) => {
     console.log("Connected to chat namespace")
-    socket.on("chatMessage", (data) =>{
+    socket.on("chatMessage", async (data) => {
         console.log(data)
-        console.log("Chat message received from:", socket.id)
-        Chat.create({
-            message: data.message,
-            sender_id: Number(data.sender_id),
-            receiver_id: Number(data.receiver_id)
-        })
-            .then(
-                (result) => {
-                    result = result.get({ plain: true })
-                    console.log(result)
-                    console.log("Message saved!")
-                    // res.redirect(`/chat/${receiver_id}`)
-                    chatNamespace.emit('chatMessage', data);
+        await User.findByPk(Number(data.sender_id)).then(user => {
+            console.log(user)
+            Chat.create({
+                message: data.message,
+                sender_id: data.sender_id,
+                receiver_id: data.receiver_id,
+                username: user.username
+            })
+                .then(result => {
+                    chatNamespace.emit("chatMessage",
+                        {
+                            message: data.message,
+                            sender_id: data.sender_id,
+                            receiver_id: data.reeciver_id,
+                            username: user.username
+                        }
+                    );
+                    // res.redirect('/forum')
                 }).catch(err => {
-                    console.log(err);
-                            
-                });
-                        // chatNamespace.emit('chatMessage', data);
+                    console.log(err)
+                })
+                
+        })
+        // chatNamespace.emit('chatMessage', data);
                     
-                        })
-                        // Handle user disconnect
-        socket.on('disconnect', () =>{
-            console.log('User disconnected:', socket.id)
-        
     })
+    socket.on('userIdentified', (userId) => {
+        userSockets.set(userId, socket.id);
+        console.log(`User ${userId} connected with ${socket.id}`);
+    });
+
+    const getSocketId = (userId) => {
+        return userSockets.get(userId);
+    };
+
+    // Track read messages
+    socket.on('markMessagesRead', (data) => {
+        const { sender_id, receiver_id } = data;
+        console.log(`Marking messages as read:`, data);
+
+        // Update messages as read in database
+        Chat.update(
+            { read: true },
+            {
+                where: {
+                    sender_id: sender_id,
+                    receiver_id: receiver_id,
+                    read: false
+                }
+            }
+        );
+
+
+        // Notify sender that messages were read
+        const senderSocketId = userSockets.get(sender_id.toString());
+        if (senderSocketId) {
+            chatNamespace.to(getSocketId(sender_id)).emit('messagesRead', {
+                reader_id: receiver_id,
+                timestamp: new Date()
+            });
+            console.log(`Notifies sender ${sender_id} that messages were read by ${receiver_id}`);
+        } else {
+            console.log(`Sender ${sender_id} is not currently connected`)
+        }
+
+    })
+    
+        // Handle user disconnect
+        socket.on('disconnect', () => {
+            for (let [userId, socketId] of userSockets.entries()) {
+                if (socketId === socket.id) {
+                    userSockets.delete(userId);
+                    console.log(`Removed under ${userId} from tracking`)
+                    break;
+                }
+            }
+            console.log(`User disconnected from chat  namespace: `, socket.id)
+        })
 })
 
 // Forum namespace
 forumNamespace.on('connection', (socket) =>{
     console.log("Connected to forum namesapce");
     socket.on("forumMessage", async(data) =>{
-        console.log(data)
         if (data.isForum === "true") {
             await User.findByPk(data.sender_id).then(user => {
-                console.log(user.username);
                 Forum.create({
                     message: data.message,
                     sender_id: data.sender_id,
                     username: user.username
                 })
                 .then(result =>{
-                    console.log(result);
-                    console.log("Message saved!")
                     forumNamespace.emit("forumMessage",
                         {
                     message: data.message,

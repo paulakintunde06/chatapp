@@ -4,7 +4,7 @@
     <main>
         <section>
             <h4>Chat</h4>
-            <h6>Chat with <span style="color: green; font-weight: bolder;"><%= username %></span> </h6>
+            <h6>Chat with <span style="color: green; font-weight: bolder;"><%= recipient_username %></span> </h6>
             <div id="chats" style="overflow-y: scroll;">
                 <% if (messages.length > 0) { %> 
                     <% for (let message of messages) { %>
@@ -21,6 +21,7 @@
                     <input type="text" name="message" id="message" placeholder="Type your message..." required>
                     <input type="hidden" name="sender_id" value="<%= sender_id %>" >
                     <input type="hidden" name="receiver_id" value="<%= receiver_id %>" >
+                     <input type="hidden" name="username" id="username" value="<%= username %>">
                     <input type="hidden" name="isForum" value="<%= false %>" > 
                     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                     <button type="submit">Send Message</button>
@@ -30,72 +31,237 @@
     </main>
     <script src="/socket.io/socket.io.js?v=<%= new Date().getTime() %>"></script> 
         <script> 
-        // console.log("socket for chat.ejs")
-        // const socket = io();
-        const chatSocket = io('/chat');
-    if(typeof(io) === 'undefined'){
-        console.error("socket.IO not loaded - check network tab")
-        alert("Socket.IO failed to load")
-    } else{
-        console.log("Socket.IO loaded")
-    }
 
-        const chatBox = document.getElementById('chats');
-        const form = document.getElementById('chat-form')
-        const messageInput = document.getElementById('message');
-        const sender_id = document.querySelector('[name="sender_id"').value;
-        const receiver_id = document.querySelector('[name="receiver_id"').value;
-        const isForum = document.querySelector('[name="isForum"]').value;
-        const csrfToken = document.querySelector('[name="csrf_token"]').value;
+    const sender_id = document.querySelector('[name="sender_id"]').value;
+    const receiver_id = document.querySelector('[name=receiver_id]').value;
+    const my_id = sender_id
+    const form = document.getElementById('chat-form')
+    const csrfToken = document.querySelector('[name="csrf_token"]').value;
+    const chatBox = document.getElementById('chats');
+    
+    const chatSocket = io('/chat', {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000
+    });
+
+     // Connection status for debugging
+    chatSocket.on('connect', () =>{
+            console.log("Connected to the chat namespace");
+            chatSocket.emit('userIdentified', my_id)
+
+             markMessagesAsRead(receiver_id, sender_id);
+        });
+     chatSocket.on('disconnect', () =>{
+            console.log("Disconnected from chat namespace")
+        })
+        chatSocket.on('connect_error', (error) =>{
+            console.error('Connection error: ', error)
+        })
+
          // Scroll to the latest message
          chatBox.scrollTop = chatBox.scrollHeight;
+
+        //  Identify User to server
+        chatSocket.emit('userIdentified', my_id);
 
         // Send a message to the Server
         form.addEventListener('submit', (e) =>{
             e.preventDefault();
-            alert("I'm prepared to submit form")
-            const message = messageInput.value.trim();
-            console.log(message, sender_id, receiver_id)
-            if(message){
-                console.log("Sending message via Socket.IO:")
-                chatSocket.emit('chatMessage', {
-                    message,
-                     sender_id: parseInt(sender_id),
-                      receiver_id: parseInt(receiver_id),
-                       isForum,
-                     _csrf: csrfToken
-                    });
+            const sender_id = document.querySelector('[name="sender_id"]').value;
+            const isForum = document.querySelector('[name="isForum"]').value;
+            const message = document.getElementById('message').value.trim();
+             if(message){
+                const immediateMessage = document.createElement('p');
+                immediateMessage.setAttribute("id", "my_chat");
+                immediateMessage.innerHTML = `<strong>You: </strong> ${message}`;
+                chatBox.appendChild(immediateMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                chatSocket.emit('chatMessage', { message, sender_id: parseInt(sender_id), receiver_id
+                    : parseInt(receiver_id), isForum, _csrf: csrfToken});
+                document.getElementById('message').value = '';
+
             }
-            messageInput.value = '';
+            // messageInput.value = '';
         });
 
         // Receive messages from the server
         chatSocket.on('chatMessage', (data) =>{
-            console.log("New chat message received:", data);
 
-            const newMessage = document.createElement('p');
-            const isMyMessage = parseInt(data.sender_id) === parseInt(sender_id);
+              const isMyMessage = Number(data.sender_id) === Number(my_id);
+              console.log(data.username)
+              if(!isMyMessage){
+                  let newMessage = document.createElement('p');
+              newMessage.setAttribute("id", "other_chat")
+              newMessage.innerHTML = `<strong>${data.username}: </strong> ${data.message}`;
+              chatBox.appendChild(newMessage);
+              chatBox.scrollTop = chatBox.scrollHeight;
 
-            if(isMyMessage){
-                newMessage.setAttribute("id", "my_chat")
-                newMessage.textContent = `${data.message}`;
-            } else{
-                newMessage.setAttribute("id", "other_chat")
-                newMessage.textContent = `${data.message}`;
+               showNotification(`New message from ${data.username}`, 'info');
+
+               if(document.hidden){
+               showTabNotification(`New message from ${data.username}`)
+               }
+              }
+
+              // Scroll to the latest message
+              chatBox.scrollTop = chatBox.scrollHeight;
+
+        })
+
+        // NOTIFICATION FUNCTIONS
+        function showNotification(message, type= 'info'){
+            // Check if browser supports notification
+            if(!("Notification" in window)){
+                console.log("This browser does not support notifications")
+                return;
             }
-            console.log(newMessage)
-            chatBox.appendChild(newMessage);
 
-            // Scroll to the latest message
+            // Request Permission if not granted
+            if(Notification.permission === "default"){
+                Notification.requestPermission().then(permission => {
+                    if(permission === "granted"){
+                        createNotification(message, type);
+                    }
+                });
+            } else if(Notification.permission === "granted"){
+                createNotification(message, type)
+            }
+
+            // Also show in-app notification
+            showInAppNotification(message,type);
+        }
+
+        function createNotification(message, type){
+            const notification = new Notification('Chat App', {
+                body: message,
+                icon: '/images/icon.png', // My app icon goes here.
+                tag: 'chat-notification'
+            });
+
+            notification.onclick = function(){
+                window.focus();
+                notification.close();
+            };
+            setTimeout(notification.close.bind(notification), 5000)
+        }
+
+        function showInAppNotification(message,type){
+            // create in-app notification element
+            const notification = document.createElement('div');
+            notification.className = `in-app-notification ${type}`;
+            notification.innerHTML = `
+            <span> ${message} </span>
+            <button class="close-notification">&times;</button>`;
+        }
+        // Add Styles if not already added
+        if(!document.querySelector('#notfication-style')){
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+            .in-app-notification{
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #007bff;
+                color: white;
+                padding: 15px;
+                border-radius: 5px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 1000;
+                max-width: 300px;
+                animation: slideIn 0.3s ease-out;
+            }
+            .in-app-notification.info{background: #007bff;}
+            .in-app-notification.success{background: 328a745;}
+            .in-app-notification.warning{background: #ffc107; color: #000;}
+            .in-app-notification.error{background: #dc3545;}
+            .in-app-notification.warning{
+                background: none;
+                border: none;
+                color: inherit;
+                font-size: 18px;
+                cursor: pointer;
+                margin-left: 10px;
+            }
+                @keyframes slideIn{
+                from{ transform: translateX(100%); opacity: 0;}
+                to{ transform: translateX(0); opacity: 1;}
+                }
+            `;
+            // Add vent listener for close button
+            notification.querySelector('.close-notification').addEventListener('click', function(){
+                notification.remove();
+            });
+            document.head.appendChild(styles);
+        }
+        document.body.appendChild(notification);
+
+        setTimeout(()=>{
+            if(notification.parentElement){
+                notification.remove()
+            }
+        }, 5000);
+
+        // Tab Notification
+        function showTabNotification(message){
+            const originalTitle = document.title;
+            document.title = `${message}`
+
+            // Blink tite if supported
+            let blinkInterval;
+            if(document.hidden){
+                let isOriginal = false;
+                blinkInterval = setInterval(() =>{
+                    document,title = isOriginal ? `${message}` : originalTitle;
+                    isOriginal = !isOriginal;
+                }, 1000)
+            }
+
+            // Clear when user focuses the tab
+            const clearNotification = () =>{
+                clearInterval(blinkInterval);
+                document.title = originalTitle;
+                window.removeEventListener('focus', clearNotification);
+
+            };
+            window.addEventListener('focus',clearNotification);
+        }
+
+
+
+        // Read Receipt
+        function markMessagesAsRead(sender_id, receiver_id){
+            console.log(`Marking messages as read: `, {sender_id, receiver_id})
+            chatSocket.emit('markMessagesRead', {
+                sender_id: parseInt(sender_id),
+                 receiver_id: parseInt(receiver_id)
+                });
+        }
+
+       
+
+        // Also mark as read when page becomes visible
+        document.addEventListener('visibilitychange', function(){
+            if(!document.hidden){
+                markMessagesAsRead(receiver_id, sender_id);
+            }
+        });
+
+        // Listen to Read Receipt Confirmation
+        chatSocket.on('messagesRead', (data) =>{
+            console.log(`Your messages were read by user:`, data.reader_id)
+            showNotification(`User read your messages`, `success`);
+
+            // You can also update UI to show read status
+            const readIndicator = document.createElement('div');
+            readIndicator.style.cssText = 'text-align: center; color: #666; font-size: 12px;';
+            readIndicator.textContent = `Read at ${new Date().toLocaleTimeString()}`;
+            chatBox.appendChild(readIndicator);
             chatBox.scrollTop = chatBox.scrollHeight;
         })
-        // Connection status for debugging
-        chatSocket.on('connect', () =>{
-            console.log("Connected to the chat namespace");
-        });
-        chatSocket.on('disconnect', () =>{
-            console.log("Disconnected from chat namespace")
-        })
+       
     </script>
 </body>
 </html>

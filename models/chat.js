@@ -24,6 +24,15 @@ const Chat = sequelize.define('Chat',{
             key: 'id',
         },
     },
+    username: {
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    read: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+        // allowNull: false,
+    }
 }, {
     tableName: 'chats',
     timestamps: true

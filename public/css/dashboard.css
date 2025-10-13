@@ -1,0 +1,31 @@
+.online-users{
+     background: #f8f9fa;
+     padding: 15px;
+     border-radius: 8px;
+     margin: 20px 0;
+}
+
+.online-user{
+     display: flex;
+     align-items: center;
+     padding: 8px;
+     margin: 5px 0;
+     background: white;
+     border-radius: 5px;
+     border-left: 4px solid #28a745;
+}
+
+.status-indicator{
+     width: 10px;
+     height: 10px;
+     border-radius: 50%;
+     margin-right: 10px;
+}
+
+.status-online{
+     background: #28a745;
+}
+
+.status-offline{
+     background: #6c757d;
+}
