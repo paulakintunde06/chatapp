@@ -40,7 +40,7 @@ app.use(helmet({
                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
                 "'unsafe-inline'",
                 // "http://localhost:3000", // Development
-                "https://chatapp-mw90.onrender.com" // Production
+                // "https://chatapp-mw90.onrender.com" // Production
             ],
             connectSrc: [
                 "'self'",
@@ -123,9 +123,7 @@ app.use(
     app.use(flash())
     
     // Sync the session store
-sessionStore.sync(
-    {alter: true}
-).then(() => {
+sessionStore.sync({ alter: true }).then(() => {
     console.log("sessions table created")
 }).catch(err => console.log("Error sequelize"));
 
@@ -165,8 +163,8 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-    // { alter: true }
-        {force: true}
+    { alter: true }
+        // {force: true}
     )
     .then(result => {
         console.log("All models are synchronized successfully");
