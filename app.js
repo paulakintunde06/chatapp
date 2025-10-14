@@ -123,7 +123,9 @@ app.use(
     app.use(flash())
     
     // Sync the session store
-sessionStore.sync({ force: true }).then(() => {
+sessionStore.sync(
+    {alter: true}
+).then(() => {
     console.log("sessions table created")
 }).catch(err => console.log("Error sequelize"));
 
