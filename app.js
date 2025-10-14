@@ -20,6 +20,17 @@ const server = http.createServer(app)
 const isProduction = process.env.NODE_ENV === 'production';
 const productionUrl = "https://chatapp-mw90.onrender.com"
 
+app.get('/clear_sessions', async (req, res) => {
+     try {
+          await sequelize.query('DELETE FROM sessions');
+          console.log("All sessions cleared");
+          res.send("Sessions cleared. Please login again");
+     } catch (error) {
+          console.log("Error clearing sessions:", error);
+          res.send("Error clearing sessions: " + error.message)
+     }
+})
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -152,8 +163,8 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-    { alter: true }
-        // {force: true}
+    // { alter: true }
+        {force: true}
     )
     .then(result => {
         console.log("All models are synchronized successfully");
