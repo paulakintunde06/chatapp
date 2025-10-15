@@ -23,17 +23,6 @@ console.log(isProduction)
 const productionUrl = "https://chatapp-mw90.onrender.com"
 
 
-// app.get('/clear_sessions', async (req, res) => {
-//      try {
-//           await sequelize.query('DELETE FROM sessions');
-//           console.log("All sessions cleared");
-//           res.send("Sessions cleared. Please login again");
-//      } catch (error) {
-//           console.log("Error clearing sessions:", error);
-//           res.send("Error clearing sessions: " + error.message)
-//      }
-// })
-
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -90,10 +79,6 @@ const sessionStore = new SequelizeStore({
     db: sequelize,
 })
 
-// Session Store
-// const sessionStore = new SequelizeStore({
-//     db: sequelize,
-// });
 const sessionMiddleware =
 session({
     store: sessionStore,
@@ -106,9 +91,7 @@ session({
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24,
         sameSite: 'lax'
-    },
-    rolling: true,
-    unset: 'destroy'// properly destroy session on logout
+    }
 })
 const User = require('./models/user');
 const Chat = require('./models/chat');
@@ -131,26 +114,23 @@ app.use(
     app.use(flash())
     
     // Sync the session store
-sessionStore.sync().then(() => {
-    console.log("sessions table created")
-}).catch(err => console.log("Error sequelize"));
+// sessionStore.sync().then(() => {
+//     console.log("sessions table created")
+// }).catch(err => console.log("Error sequelize"));
 
 app.use((req, res, next) => {
     const userAgent = req.get('User-Agent');
     const isFirefox = userAgent.includes('Firefox');
+    if (isFirefox) {
+
+        res.set('Cache-Control', 'no-cache, no-store', 'must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0')
+    }
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
 
-    if (isFirefox) {
-        console.log("This is firefox")
-        res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate, private',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Vary': 'User-Agent'  // Important for firefox
-        })
-        next();
-    }
+    next();
 })
 
 app.use(authenticationRoutes);
@@ -194,7 +174,6 @@ sequelize
     console.log(err);
 })
 
-console.log(process.env.NODE_ENV)
 
 const io = new Server(server, {
     cors: {

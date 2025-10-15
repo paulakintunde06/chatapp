@@ -3,9 +3,6 @@ const db = require('../util/database');
 const User = require('../models/user');
 const Chat = require('../models/chat');
 const Forum = require('../models/forum');
-// let chats = [];
-// let users = [];
-// let forum = [];
 
 // FETCH USERNAME
 async function getUsernameById(userId) {

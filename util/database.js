@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === "production") {
                 rejectUnauthorized: false
             }
         },
-        logging: console.log,
+        // logging: console.log,
         pool: {
             max: 5,
             min: 0,
@@ -36,7 +36,7 @@ if (process.env.NODE_ENV === "production") {
        dialect: 'mysql',
        host: 'localhost',
        port: 3310,
-       logging: console.log,
+    //    logging: console.log,
     })
 
 }

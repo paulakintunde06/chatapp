@@ -21,33 +21,33 @@
     <script>
         const socket = io();
         // Notify server that user is online
-        socket.emit('userOnline', {
-            // userId: userId,
-            username: username
-        });
+        // socket.emit('userOnline', {
+        //     // userId: userId,
+        //     username: username
+        // });
 
-        // Listen for online status updates
-        socket.on('userStatusUpdate', (data) =>{
-            updateOnlineUsersList(data.onlineUsers);
+        // // Listen for online status updates
+        // socket.on('userStatusUpdate', (data) =>{
+        //     updateOnlineUsersList(data.onlineUsers);
 
-            // Show notification when user comes online/offline
-            if(data.userId !== userId){
-                showNotification(`${data.username} is ${data.status}`);
-            }
-        });
-        function updateOnlineUsersList(onlineUsers){
-            const onlineList = document.getElementById('online-users-list');
+        //     // Show notification when user comes online/offline
+        //     if(data.userId !== userId){
+        //         showNotification(`${data.username} is ${data.status}`);
+        //     }
+        // });
+        // function updateOnlineUsersList(onlineUsers){
+        //     const onlineList = document.getElementById('online-users-list');
 
-            if(onlineUsers.length === 0){
-                onlineList.innerHTML = `<div class="no-users">No users online</div>`;
-                return;
-            }
+        //     if(onlineUsers.length === 0){
+        //         onlineList.innerHTML = `<div class="no-users">No users online</div>`;
+        //         return;
+        //     }
 
-            onlineList.innerHTML = onlineUsers.map(user =>`
-            <div class="online-user">
-                <div class="status-indicator status-online"> </div>
-                <strong> ${user.username} </strong>
-            </div>`).join('');
-        }
+        //     onlineList.innerHTML = onlineUsers.map(user =>`
+        //     <div class="online-user">
+        //         <div class="status-indicator status-online"> </div>
+        //         <strong> ${user.username} </strong>
+        //     </div>`).join('');
+        // }
     </script>
 <%- include('includes/footer.ejs') %>

@@ -22,7 +22,8 @@ exports.getSignIn = (req, res, next) =>{
 }
 
 
-exports.postSignUp = async (req, res, next) =>{
+exports.postSignUp = async (req, res, next) => {
+    console.log("postSignUp")
 
     // console.log(req.body);
     const username = req.body.username;
@@ -39,8 +40,9 @@ exports.postSignUp = async (req, res, next) =>{
         // Check if username exists
         const existingUser = await User.findOne({ where: { username: username } });
         if (existingUser) {
-            req.flash('error_msg', 'Use already exist!')
-            return res.redirect('/');
+            console.log('User already exist!')
+            // req.flash('error_msg', 'User already exist!')
+            return res.redirect('/')
         }
 
         // Hash password and create user
@@ -49,16 +51,15 @@ exports.postSignUp = async (req, res, next) =>{
             username: username,
             password: hashPassword
         });
-
+        console.log("This is ...")
         req.flash('success_msg', 'Registration successful!')
 
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error during signup:', err);
                 return res.redirect('/signin');
-                
             }
-            console.log("Signu successful, redirecting to signin");
+            console.log("Signup successful, redirecting to signin");
             return res.redirect('/signin');
         })
     } catch (error) {
