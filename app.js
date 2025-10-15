@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require("express")
 const app = express();
 const bodyParser = require("body-parser")
@@ -18,7 +19,9 @@ const compression = require('compression');
 const server = http.createServer(app)
 
 const isProduction = process.env.NODE_ENV === 'production';
+console.log(isProduction)
 const productionUrl = "https://chatapp-mw90.onrender.com"
+
 
 // app.get('/clear_sessions', async (req, res) => {
 //      try {
@@ -39,7 +42,8 @@ app.use(helmet({
                 "'self'",
                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
                 "'unsafe-inline'",
-                // "http://localhost:3000", // Development
+                "'unsafe-eval'",
+                "http://localhost:3000", // Development
                 "https://chatapp-mw90.onrender.com" // Production
             ],
             connectSrc: [
@@ -93,13 +97,15 @@ const sessionStore = new SequelizeStore({
 const sessionMiddleware =
 session({
     store: sessionStore,
-    secret: process.env.SESSION_SECRET || "MySecret",
+    secret: process.env.SESSION_SECRET || "myTopSecret",
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
         secure: process.env.NODE_ENV === "production" ? true:false, // will set to true in production
         httpOnly: true,
-        maxAge: 1000 * 60 * 60
+        maxAge: 1000 * 60 * 60 * 24,
+        sameSite: 'lax'
     }
 })
 const User = require('./models/user');
@@ -123,9 +129,9 @@ app.use(
     app.use(flash())
     
     // Sync the session store
-sessionStore.sync().then(() => {
-    console.log("sessions table created")
-}).catch(err => console.log("Error sequelize"));
+// sessionStore.sync().then(() => {
+//     console.log("sessions table created")
+// }).catch(err => console.log("Error sequelize"));
 
 app.use((req, res, next) =>{
     res.locals.success_msg = req.flash('success_msg');
@@ -163,16 +169,18 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-    { force: false, alter: true }
+    // { alter: true }
     )
     .then(result => {
         console.log("All models are synchronized successfully");
+        
         // console.log("Tables created");
 }).catch(err =>{
     // console.log('Tables not created');
     console.log(err);
 })
 
+console.log(process.env.NODE_ENV)
 
 const io = new Server(server, {
     cors: {

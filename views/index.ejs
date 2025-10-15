@@ -1,6 +1,11 @@
 <%- include('includes/head.ejs') %>
 <link rel="stylesheet" href="css/index.css">
 <%- include('includes/header.ejs') %>
+<script>
+    if(window.history.replaceState){
+        window.history.replaceState(null, null, window.location.href);
+    }
+</script>
     <main>
         <section>
             <form class="form-control" action="/signup" method="post">
@@ -20,4 +25,23 @@
         </section>
         <a id="signin" href="/signin">Sign in</a>
     </main>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form =>{
+                form.addEventListener('submit', function(e){
+                    const submitBtn = this.querySelector('input[type="submit"], button[type="submit"]');
+                    if(submitBtn){
+                        submitBtn.disabled = true;
+                        if(submitBtn.value){
+                            submitBtn.value = 'Please wait...';
+                        } else if(submitBtn.textContent){
+                            submitBtn.textContent = 'Please wait...'
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 <%- include('includes/footer.ejs') %>
