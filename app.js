@@ -106,7 +106,9 @@ session({
         httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24,
         sameSite: 'lax'
-    }
+    },
+    rolling: true,
+    unset: 'destroy'// properly destroy session on logout
 })
 const User = require('./models/user');
 const Chat = require('./models/chat');
@@ -129,14 +131,26 @@ app.use(
     app.use(flash())
     
     // Sync the session store
-// sessionStore.sync().then(() => {
-//     console.log("sessions table created")
-// }).catch(err => console.log("Error sequelize"));
+sessionStore.sync().then(() => {
+    console.log("sessions table created")
+}).catch(err => console.log("Error sequelize"));
 
-app.use((req, res, next) =>{
+app.use((req, res, next) => {
+    const userAgent = req.get('User-Agent');
+    const isFirefox = userAgent.includes('Firefox');
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
-    next();
+
+    if (isFirefox) {
+        console.log("This is firefox")
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Vary': 'User-Agent'  // Important for firefox
+        })
+        next();
+    }
 })
 
 app.use(authenticationRoutes);

@@ -23,7 +23,7 @@
                     <input type="hidden" name="receiver_id" value="<%= receiver_id %>" >
                      <input type="hidden" name="username" id="username" value="<%= username %>">
                     <input type="hidden" name="isForum" value="<%= false %>" > 
-                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit">Send Message</button>
                 </form>
         </section>
@@ -36,7 +36,7 @@
     const receiver_id = document.querySelector('[name=receiver_id]').value;
     const my_id = sender_id
     const form = document.getElementById('chat-form')
-    const csrfToken = document.querySelector('[name="csrf_token"]').value;
+    const csrfToken = document.querySelector('[name="_csrf"]').value;
     const chatBox = document.getElementById('chats');
     
     const chatSocket = io('/chat', {

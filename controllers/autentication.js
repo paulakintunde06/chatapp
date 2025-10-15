@@ -51,7 +51,16 @@ exports.postSignUp = async (req, res, next) =>{
         });
 
         req.flash('success_msg', 'Registration successful!')
-        return res.redirect('./signin');
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error during signup:', err);
+                return res.redirect('/signin');
+                
+            }
+            console.log("Signu successful, redirecting to signin");
+            return res.redirect('/signin');
+        })
     } catch (error) {
         console.log("Error during signup:", error);
         req.flash('error_msg', 'An error occured during registration');
@@ -82,8 +91,8 @@ exports.postSignIn = async (req, res, next) =>{
         }
 
         // Compare Password
-        const userData = user.get({lain:true})
-        const isMatch = await bcrypt.comare(password, userData.password);
+        const userData = user.get({plain:true})
+        const isMatch = await bcrypt.compare(password, userData.password);
         if (!isMatch) {
             console.log('Password mismatch for user:', username);
             req.flash('error_msg', "Invalid username or password");
@@ -91,13 +100,22 @@ exports.postSignIn = async (req, res, next) =>{
         }
 
         // Set session data
-        req.session.user_id = userData.user_id
+        req.session.user_id = userData.id
         req.session.username = userData.username;
 
         console.log("Login Successful for user:", username);
+        console.log("Session user_id set to:", req.session.user_id);
 
-        // SINGLE redirect for success
-        return res.redirect('/dashboard'); // FINAL return
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                req.flash('error_msg', 'Login faied');
+                return res.redirect('/signin');
+            }
+            console.log("Session saved successfully, redirecting...");
+            // SINGLE redirect for success
+            return res.redirect('/dashboard'); // FINAL return
+        }) 
     } catch (error) {
         console.error('LOGIN ERROR: ', error);
         req.flash('error_msg', 'An error occured logging in');
