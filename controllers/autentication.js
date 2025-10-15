@@ -22,150 +22,85 @@ exports.getSignIn = (req, res, next) =>{
 }
 
 
-exports.postSignUp = (req, res, next) =>{
+exports.postSignUp = async (req, res, next) =>{
 
     // console.log(req.body);
     const username = req.body.username;
     const password = req.body.password;
-    const user_id = "";
-    let hashPassword;
     const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?_&])[A-Za-z\d@$!%*?_&]{8,}$/;
 
-// Checks if the password is strong enough
-    const isPasswordStrong = (password) => strongPasswordRegex.test(password);
-    if(!isPasswordStrong(password)){
-        // console.log("Password bad!")
-        req.flash('error_msg', 'Password must be at least 8 characters long and contain uppercase, lowercase, a number, and a special character');
-        return res.redirect('/')
-        
-        // return res.status(400).send('Password must be at least 8 characters long and contain uppercase, lowercase, a number, and a special character');
-    }
-
-    // Checks if the username already exists in the database
-    User.findOne({where: {username: username}})
-    .then(
-        result => {
-            // console.log(result)
-            if (result) {
-                req.flash('error_msg', 'User Already Exist!');
-                return res.redirect('/')
-                // return res.status(400).send("Username already exists")
-            }
-
-            // Hashing the password
-            bcrypt.hash(password, 10) // Salt rounds to the power of 10
-            .then((result) => {
-                // console.log(result)
-                hashPassword = result;
-
-                // Create User 
-              User.create({
-                username: username,
-                password: hashPassword
-            }).then(
-               (result) =>{
-                //    console.log(result)
-                   result = result.get({plain: true})
-                    //    console.log("User Registered!")
-                    req.flash('success_msg', 'Registration successful!')
-                   return res.redirect('/signin')
-   }).catch(err =>{console.log(err)});
-
-            })
-            .catch(err => {
-                // console.log("Hashing error!")
-                 req.flash('error_msg', 'Error!');
-                 return res.redirect('/')
-                // return res.send("Hashing error!")
-            })
-            
-            
-
-        }).catch(err => {
-            req.flash('error_msg', 'Error with the Username!');
-            console.log("There's an error with username")
+    try {
+        // Check password strength 
+        if (!strongPasswordRegex.test(password)) {
+            req.flash('error_msg', 'Password must be at least 8 characters long and contain uppercase, lowercase, a number, and a special character');
             return res.redirect('/')
-        })
+        }
 
-    // console.log(hashPassword)
+        // Check if username exists
+        const existingUser = await User.findOne({ where: { username: username } });
+        if (existingUser) {
+            req.flash('error_msg', 'Use already exist!')
+            return res.redirect('/');
+        }
 
+        // Hash password and create user
+        const hashPassword = await bcrypt.hash(password, 10);
+        await User.create({
+            username: username,
+            password: hashPassword
+        });
 
-
-// res.redirect(301, '/dashboard')
-    
-//     if(!req.session.user_id){
-//         req.session.user_id = {}
-//     }
-//     req.session.user_id = user_id
-//     res.redirect('/dashboard', {isAuthenticated: true, user_id: user_id, username:username})
+        req.flash('success_msg', 'Registration successful!')
+        return res.redirect('./signin');
+    } catch (error) {
+        console.log("Error during signup:", error);
+        req.flash('error_msg', 'An error occured during registration');
+        return res.redirect('/');
+    }
 }
 
 
 exports.postSignIn = async (req, res, next) =>{
     let {username, password} = req.body;
 
-    
-    // Extract User
-    const findUser = async(username) =>{
-        const user = await User.findOne({where:{username } })
-        if (user) {
-            // console.log(user)
-            return user.get({plain: true})
-            } else{
+    try {
+        console.log("=== SIGNIN ATTEMPT ===")
+        console.log("Username:", username)
 
-            console.log("No User")
+        // Input Validation
+        if (!username || !password) {
+            req.flash('error_msg', 'Please provide both username and password');
+            return res.redirect('/signin')
+        }
+
+        // Find user
+        const user = await User.findOne({ where: { username } });
+        if (!user) {
+            console.log('User not found: ', username)
             req.flash('error_msg', 'Invalid username or password');
-            return res.redirect('/')
-                // res.send("Fill the boxes")
-            }
+            return res.redirect('/signin')
         }
 
-        // Compare Passwords
-        const comparePassword = async(password, user) =>{
-            // console.log(password)
-            // console.log(user.password)
-            // console.log(user)
-            if (!user || !password) {
-                console.log("Invalid User")
-                req.flash('error_msg', 'Invalid username or password');
-                return res.redirect('/')
-            } else {
-                const isMatch = await bcrypt.compare(password, user.password)
-                if (isMatch){
-                    console.log("Password matches!")
-                } else{
-                    console.log("Password doesn't match!")
-                    req.flash('error_msg', 'Invalid username or password');
-                    return res.redirect('/')
-                }
-                return isMatch
-                
-            }
+        // Compare Password
+        const userData = user.get({lain:true})
+        const isMatch = await bcrypt.comare(password, userData.password);
+        if (!isMatch) {
+            console.log('Password mismatch for user:', username);
+            req.flash('error_msg', "Invalid username or password");
+            return res.redirect('/signin');
         }
 
-        
-        // Add Session
-        const addSession = async(user) =>{
-                if(!req.session){
-                    req.session = {}
-                    console.log("Session has been created!")
-                }
-                // console.log(req.session)
-                req.session.user_id = user.id;
-                // return req.session.user_id;
-                return
-            }
-        
+        // Set session data
+        req.session.user_id = userData.user_id
+        req.session.username = userData.username;
 
-        const user = await findUser(username)
+        console.log("Login Successful for user:", username);
 
-        const isMatch = await comparePassword(password, user)
-
-        if(isMatch){
-            await addSession(user)
-    }
-    
-        res.redirect('/dashboard')
-
-                       
+        // SINGLE redirect for success
+        return res.redirect('/dashboard'); // FINAL return
+    } catch (error) {
+        console.error('LOGIN ERROR: ', error);
+        req.flash('error_msg', 'An error occured logging in');
+        return res.redirect('/signin')
+    }           
                     }
