@@ -32,7 +32,7 @@ app.use(helmet({
                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
                 "'unsafe-inline'",
                 "'unsafe-eval'",
-                "http://localhost:3000", // Development
+                // "http://localhost:3000", // Development
                 "https://chatapp-mw90.onrender.com" // Production
             ],
             connectSrc: [
