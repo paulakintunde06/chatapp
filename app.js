@@ -18,6 +18,7 @@ const compression = require('compression');
 
 const server = http.createServer(app)
 
+console.log(process.env.NODE_ENV)
 const isProduction = process.env.NODE_ENV === 'production';
 console.log(isProduction)
 const productionUrl = "https://chatapp-mw90.onrender.com"
@@ -32,7 +33,7 @@ app.use(helmet({
                 // ...(isProduction ? [] : ["'unsafe-inline'", "http://localhost:3000"])
                 "'unsafe-inline'",
                 "'unsafe-eval'",
-                // "http://localhost:3000", // Development
+                "http://localhost:3000", // Development
                 "https://chatapp-mw90.onrender.com" // Production
             ],
             connectSrc: [
@@ -107,11 +108,13 @@ const { contentSecurityPolicy } = require("helmet");
 
 
 
-app.use(
-   sessionMiddleware
-    );
-    
-    app.use(flash())
+app.use(sessionMiddleware);
+app.use(flash())
+app.use((req, res, next) => {
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+    })
     
     // Sync the session store
 // sessionStore.sync().then(() => {
@@ -122,14 +125,12 @@ app.use((req, res, next) => {
     const userAgent = req.get('User-Agent');
     const isFirefox = userAgent.includes('Firefox');
     if (isFirefox) {
-
         res.set('Cache-Control', 'no-cache, no-store', 'must-revalidate');
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0')
     }
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
-
     next();
 })
 
@@ -163,7 +164,7 @@ sequelize.authenticate().then(()=>console.log('Connection established to:', sequ
 
 sequelize
     .sync(
-    // { alter: true }
+    { alter: true }
     )
     .then(result => {
         console.log("All models are synchronized successfully");
@@ -191,9 +192,29 @@ const io = new Server(server, {
 //         console.log("ROOT disconnect")
 //     })
 // })
-const chatNamespace = io.of('/chat')
-const forumNamespace = io.of('/forum')
+const dashboardNamespace = io.of('/dashboard')
+const chatNamespace = io.of('/chat');
+const forumNamespace = io.of('/forum');
 
+
+const onlineUsers = new Map();
+// Dashboard Namespaces
+dashboardNamespace.on('connection', (socket) => {
+    console.log("A user connected to the dashboard: ", socket.id)
+
+    // socket.on('usersStatusUpdate', () => {
+    //     console.log("Connected to dashboard")
+    // })
+    socket.on("user-online", (userId) => {
+        console.log("user-online")
+        onlineUsers.set(socket.id, userId);
+        dashboardNamespace.emit("updateUsersStatus", Array.from(onlineUsers.values()));
+    })
+    socket.on("disconnect", () => {
+        onlineUsers.delete(socket.id);
+        dashboardNamespace.emit("updateUsersStatus", Array.from(onlineUsers.values()))
+    })
+})
 
 // Chat namespaces
 const userSockets = new Map();
@@ -277,7 +298,7 @@ chatNamespace.on('connection', (socket) => {
                     break;
                 }
             }
-            console.log(`User disconnected from chat  namespace: `, socket.id)
+            console.log(`User disconnected from chat namespace: `, socket.id)
         })
 })
 

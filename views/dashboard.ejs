@@ -3,31 +3,108 @@
 <%- include('includes/header.ejs') %>
     <h1>Users</h1>
     <a href="/forum">Visit Forum</a>
-    <ol>
-        <% if(users.length > 0) { %>
-            <% for (let user of users) { %>
-        <li><a href="/chat/<%= user.id %>" target="_blank" ><%= user["username"] %></a></li>
-            <% } %>
-        <% } %>
-    </ol>
     <div class="online-users">
         <h3>Online Users</h3>
-        <div id="online-users-list">
-            <div class="loading">Loading online users...</div>
+        <ul id="online-users-list"> </ul>
+            
+                <!-- <% if(users.length > 0) { %>
+                    <% for (let user of users) { %>
+                <li 
+                class = "user-item" data-id="<%= user.id %>" style = "cursor: pointer;"><a href="/chat/<%= user.id %>" target="_blank" ><%= user["username"] %></a></li>
+                    <% } %>
+                <% } %> -->
+                <br>
+        <h3>Offline Users</h3>
+        <ul id="offline-users-list"></ul>
+            <!-- <div class="loading">Loading online users...</div> -->
         </div>
     </div>
     <a id="logout" href="/logout">Logout</a>
+    <script>
+        const users = <%- JSON.stringify(users) %> ;
+        const currentUser = <%- JSON.stringify(currentUser) %> ;
+        const currentUserId = <%- JSON.stringify(user_id) %> ;
+        console.log(currentUser)
+        console.log(currentUserId)
+        console.log(users)
+
+      
+    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        // Notify server that user is online
-        // socket.emit('userOnline', {
-        //     // userId: userId,
-        //     username: username
-        // });
+        console.log("This is the dashboard!")
+        const dashboardSocket = io('/dashboard');
+        dashboardSocket.emit("user-online", currentUserId)
+          let onlineUserIds = [];
+
+          dashboardSocket.on("updateUsersStatus", (onlineUserIds) =>{
+            console.log("dashboard Socket User Status", onlineUserIds)
+            onlineUserIds = onlineUserIds;
+
+            const onlineList = document.getElementById("online-users-list");
+            const offlineList = document.getElementById('offline-users-list');
+
+            onlineList.innerHTML = "";
+            offlineList.innerHTML = "";
+
+            users.forEach((user) =>{
+                const li = document.createElement("li");
+                li.classList.add("user-item");
+                li.dataset.id = user.id;
+                li.style.cursor = "pointer";
+                li.innerHTML = `<a href="/chat/${user.id}" target="_blank"> ${user.username}</a>`;
+            
+                if(onlineUserIds.includes(Number(user.id))){
+                    console.log(user.id)
+                    li.style.color = "green";
+                    onlineList.appendChild(li);
+                } else{
+                    li.style.color = "gray";
+                    offlineList.appendChild(li);
+                }
+                
+            })
+          });
+
+        // //   3. Detect when a user is clicked
+        // document.querySelectorAll(".user-item").forEach(item => {
+        //     item.addEventListener("click", () =>{
+        //         const clickedUserId = item.dataset.id;
+        //         console.log(clickedUserId)
+
+        //         // Checks if this user is online
+        //         const isOnline = onlineUserIds.includes(clickedUserId);
+
+        //         if(isOnline){
+        //             console.log(`User ${clickedUserId} is online`);
+
+        //             window.location.location.href = `/chat/${clickedUserId}`
+        //         } else{
+        //             console.log(`User ${clickedUserId} is offline`);
+        //             alert("User is offline. You can still send a message. It will deliver later.")
+        //         }
+        //     })
+        // })
+
+
+        // Connection status for debugging
+        dashboardSocket.on("connect", (socket) =>{
+        console.log("Connected to the dashboard namespace: ", socket.id);
+        console.log("Hi")
+        console.log(socket)
+        // dashboardSocket.emit('userIdentified', my_id)
+
+        });
+        dashboardSocket.on('disconnect', () =>{
+        console.log("Disconnected from dashboard namespace")
+        })
+        dashboardSocket.on('connect_error', (error) =>{
+        console.error('Connection error: ', error)
+        })
 
         // // Listen for online status updates
-        // socket.on('userStatusUpdate', (data) =>{
+        // dashboardSocket.on('userStatusUpdate', (data) =>{
+        //     console.log("Hi, userStatus")
         //     updateOnlineUsersList(data.onlineUsers);
 
         //     // Show notification when user comes online/offline

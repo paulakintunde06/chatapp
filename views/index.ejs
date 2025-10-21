@@ -8,6 +8,12 @@
 </script>
     <main>
         <section>
+            <% if (success_msg){ %>
+            <div class="flash success" style="color: white;"> <%= success_msg %></div>
+        <% } %>
+                <% if (error_msg) { %>
+                <div class="flash error" style="color: red;"> <%= error_msg %></div>
+            <% } %>
             <form class="form-control" action="/signup" method="post">
                 <label for="username">Username: </label> <br> 
                 <input type="text" name="username" id="username" value=""> <br> <br>
@@ -16,26 +22,16 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="submit" value="Sign Up">
             </form>
-            <% if (success_msg){ %>
-            <div class="flash success"> <%= success_msg %></div>
-        <% } %>
-                <% if (error_msg) { %>
-                <div class="flash error"> <%= error_msg %></div>
-            <% } %>
         </section>
         <a id="signin" href="/signin">Sign in</a>
     </main>
     <script>
-        //  if(window.history.replaceState){
-        //  window.history.replaceState(null, null, window.location.href);
-        //  }
 
         // document.addEventListener('DOMContentLoaded', function(){
         //     const form = document.querySelector('form');
         //         form.addEventListener('submit', function(e){
         //             e.preventDefault()
         //             const submitBtn = this.querySelector('input[type="submit"], button[type="submit"]');
-        //             console.log(submitBtn)
         //             if(submitBtn){
         //                 submitBtn.disabled = true;
         //                 if(submitBtn.value){

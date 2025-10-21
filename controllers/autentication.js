@@ -41,9 +41,10 @@ exports.postSignUp = async (req, res, next) => {
         const existingUser = await User.findOne({ where: { username: username } });
         if (existingUser) {
             console.log('User already exist!')
-            // req.flash('error_msg', 'User already exist!')
+            req.flash('error_msg', 'User already exist!')
             return res.redirect('/')
         }
+
 
         // Hash password and create user
         const hashPassword = await bcrypt.hash(password, 10);

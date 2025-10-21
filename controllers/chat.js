@@ -21,31 +21,33 @@ async function getUsernameById(userId) {
 }
 
 // DASHBOARD
-exports.getDashboard = (req, res, next) =>{
+exports.getDashboard = (req, res, next) => {
     // console.log("I'm in the dashboard now!")
     // console.log(req.session.user_id)
     req.session.csrfToken = req.csrfToken()
     // console.log(req.session.csrfToken)
     let users = []
     let myUserId = req.session.user_id;
-   async function getOtherUsers(){
-       users = await User.findAll(
-        {
-            where:{
-                id: {
-                    [Sequelize.Op.not]: myUserId
+    let currentUser = req.session.username;
+    console.log(currentUser)
+    async function getOtherUsers() {
+        users = await User.findAll(
+            {
+                where: {
+                    id: {
+                        [Sequelize.Op.not]: myUserId
+                    }
                 }
             }
-        }
-       );
-    //    console.log(users[1]['dataValues'])
-       users = users.map(user => user.toJSON());
-       return users;
+        );
+        //    console.log(users[1]['dataValues'])
+        users = users.map(user => user.toJSON());
+        return users;
     }
     getOtherUsers().then(result => {
         users = result
         // console.log(users)
-        res.render('dashboard', {users: users, user_id: req.session.user_id, usernames: users.username, csrfToken: req.session.csrfToken });
+        res.render('dashboard', { users: users, user_id: req.session.user_id, currentUser: req.session.username, usernames: users.username, csrfToken: req.session.csrfToken });
     })
     // console.log(users)
     // console.log(users)

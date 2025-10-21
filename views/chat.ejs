@@ -77,7 +77,9 @@
                 immediateMessage.setAttribute("id", "my_chat");
                 immediateMessage.innerHTML = `<strong>You: </strong> ${message}`;
                 chatBox.appendChild(immediateMessage);
+                
                 chatBox.scrollTop = chatBox.scrollHeight;
+
                 chatSocket.emit('chatMessage', { message, sender_id: parseInt(sender_id), receiver_id
                     : parseInt(receiver_id), isForum, _csrf: csrfToken});
                 document.getElementById('message').value = '';
